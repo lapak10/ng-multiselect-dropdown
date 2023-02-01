@@ -222,8 +222,9 @@ export class MultiSelectComponent implements ControlValueAccessor {
       return false;
     }
 
-    let filteredItems = this.listFilterPipe.transform(this._data, this.filter);
-    return (filteredItems.filter( (fi) => ! this.selectedItems.find(si => si.text === fi.text) ).length === 0);
+    let filteredItems = this.listFilterPipe.transform(this._data, this.filter).filter((fi) => !fi.isDisabled)
+    
+    return filteredItems.filter( (fi)=>  !this.selectedItems.find( (si)=>  si.text === fi.text ) ).length === 0
   }
 
   showButton(): boolean {
