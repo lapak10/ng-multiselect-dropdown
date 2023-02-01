@@ -213,15 +213,17 @@ export class MultiSelectComponent implements ControlValueAccessor {
     return this._settings.limitSelection === this.selectedItems.length;
   }
 
+  noResultsFound() { 
+    return this.listFilterPipe.transform(this._data, this.filter).length === 0
+  }
+
   isAllItemsSelected(): boolean {
-    // get disabld item count
-    let filteredItems = this.listFilterPipe.transform(this._data,this.filter);
-    const itemDisabledCount = filteredItems.filter(item => item.isDisabled).length;
-    // take disabled items into consideration when checking
     if ((!this.data || this.data.length === 0) && this._settings.allowRemoteDataSearch) {
       return false;
     }
-    return filteredItems.length === this.selectedItems.length + itemDisabledCount;
+
+    let filteredItems = this.listFilterPipe.transform(this._data, this.filter);
+    return (filteredItems.filter( (fi) => ! this.selectedItems.find(si => si.text === fi.text) ).length === 0);
   }
 
   showButton(): boolean {
@@ -317,12 +319,17 @@ export class MultiSelectComponent implements ControlValueAccessor {
     if (this.disabled) {
       return false;
     }
+
+    let filteredItems = this.listFilterPipe.transform(this._data, this.filter);
+
     if (!this.isAllItemsSelected()) {
-      // filter out disabled item first before slicing
-      this.selectedItems = this.listFilterPipe.transform(this._data,this.filter).filter(item => !item.isDisabled).slice();
+      
+      const selectedItemsId = this.selectedItems.map((si) => si.id)
+      
+      this.selectedItems = [...this.selectedItems.slice(), ...filteredItems.filter(item => !item.isDisabled && !selectedItemsId.includes( item.id ))]
       this.onSelectAll.emit(this.emittedValue(this.selectedItems));
     } else {
-      this.selectedItems = [];
+      this.selectedItems = this.selectedItems.filter((si) => !filteredItems.find(fi => si.text === fi.text))
       this.onDeSelectAll.emit(this.emittedValue(this.selectedItems));
     }
     this.onChangeCallback(this.emittedValue(this.selectedItems));
